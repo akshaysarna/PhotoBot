@@ -1,11 +1,15 @@
 # importing requests library
+
 import requests
 # fetching access_token from key.py
 from key import ACCESS_TOKEN
 # importing urllib library to download user data
 import urllib
-
+from textblob import TextBlob
+from textblob.sentiments import  NaiveBayesAnalyzer
 # Base_url is endpoint of instagram api
+import numpy as  np
+import matplotlib.pyplot as plt
 Base_url = 'https://api.instagram.com/v1/'
 
 
@@ -77,7 +81,7 @@ def user_info(username):
         if len(info_user['data']) > 0:
             user_id = info_user['data'][0]['id']
             print "User id: %s" % (user_id)
-        # return user id
+            # return user id
             return user_id
         elif len(info_user['data']) == 0:
             print 'User is not available in Sandbox Mode.'
@@ -134,7 +138,7 @@ def user_post():
 
 # Creating fucntion to get media id
 def media_id():
-    # setting up url to get details.
+
     check = raw_input("For own post (Y/N):")
     if check.upper() == 'Y':
         url_new = Base_url + 'users/self/media/recent/?access_token=%s' % (ACCESS_TOKEN)
@@ -260,7 +264,7 @@ def post_comment():
     # post request doesn't works
     else:
         print "Not Successful."
-    # checking whether the post request was successful or not.
+        # checking whether the post request was successful or not.
 
 
 # creating funtion to delete comments
@@ -275,38 +279,81 @@ def del_comment():
     if cmnt['meta']['code'] == 200:
         # Selecting comment to be deleted
         if len(cmnt['data']) != 0:
-            print 'Choose Comment'
+
             for x in range(0, len(cmnt['data'])):
-                v = int(x)
-                print '%s. %s' % (v + 1, cmnt['data'][x]['text'])
+                blob =TextBlob(cmnt['data'][x]['text'],analyzer=NaiveBayesAnalyzer())
+                blob.sentiment
+                if blob.sentiment.p_pos < blob.sentiment.p_neg:
+                    print cmnt['data'][x]['id']
+                    data = cmnt['data'][x]['id']
+                    url_now = Base_url + 'media/%s/comments/%s?access_token=%s' % (new_media_id, data, ACCESS_TOKEN)
             # Asking user to delete which comment
-            var = int(raw_input('Enter The Option.'))
-            data = cmnt['data'][var - 1]['id']
+                    comment_del = requests.delete(url_now).json()
+                    if comment_del['meta']['code'] == 200:
             # setting up url
-            url_now = Base_url + 'media/%s/comments/%s?access_token=%s' % (new_media_id, data, ACCESS_TOKEN)
+                        print 'Successfully Deleted.'
             # deleting the comment from the post.
-            comment_del = requests.delete(url_now).json()
+                    else:
+                        print "There was a problem comment couldn't be deleted."
             # checking whether the delete request was successful or not.
-            if comment_del['meta']['code'] == 200:
-                print 'Successfully Deleted.'
-            # if comment is not deleted
-            else:
-                print "There was a problem comment couldn't be deleted."
-        elif len(cmnt['data'])==0:
+
+        elif len(cmnt['data']) == 0:
             print 'There are no comments.'
     # if getting comment didn't work
     elif cmnt['meta']['code'] != 200:
         print 'There was a problem'
 
 
-#creating a method to choose option
+def frnd_hashtag():
+    new_user_hash = media_id()
+
+    url_hash = Base_url + 'media/%s?access_token=%s' % (new_user_hash, ACCESS_TOKEN)
+    hash_req = requests.get(url_hash).json()
+    if hash_req['meta']['code'] == 200:
+        new_text =hash_req['data']['caption']['text']
+        print hash_req['data']['caption']['text']
+        i = 0
+        count = 0
+        while i < len(new_text):
+            if new_text[i] == '#':
+                count = count + 1
+            i = i + 1
+
+        hash = new_text.split('#', count)
+        for x in range(1, len(hash)):
+            blob = TextBlob(hash[x], analyzer=NaiveBayesAnalyzer())
+            blob.sentiment
+
+            plt.axis([0, len(hash), -1, 1])
+            plt.xlabel("Interest")
+            plt.xlabel("Post")
+            post = 1
+            if blob.sentiment.p_neg <= blob.sentiment.p_pos:
+                point_y = blob.sentiment.p_pos
+                line, =plt.plot(post, point_y, '-')
+                post = post + 1
+            else:
+                point_y =blob.sentiment.p_neg
+                line, = plt.plot(post, -point_y, '-')
+                post = post + 1
+
+        line.set_antialiased(False)
+        plt.setp(line, color='r', linewidth=2.0)
+        plt.show()
+        print 'SuccessFul.'
+
+    elif hash_req != 200:
+        print 'Unsuccessful.'
+
+
+# creating a method to choose option
 def choose_option():
     choose = True
     print 'Welcome to InstaBot.'
     # choosing the option from the list operations
     while choose:
         option = int(raw_input(
-            "Choose from \n1.Self Info. \n2.Self Post. \n3.UserPost. \n4.List of People like the Post.\n5.Like a Post.\n6.Get Comments.\n7.Post a comment\n8.Delete a comment \n9.Exit.\n"))
+            "Choose from \n1.Self Info. \n2.Self Post. \n3.UserPost. \n4.List of People like the Post.\n5.Like a Post.\n6.Get Comments.\n7.Post a comment\n8.Delete a comment \n9.HashTag.\n10.Exit\n"))
         if option == 1:
             self_info()
         elif option == 2:
@@ -324,9 +371,14 @@ def choose_option():
         elif option == 8:
             del_comment()
         elif option == 9:
+            frnd_hashtag()
+        elif option == 10:
+
             print 'Thank You. Have a great day.'
             choose = False
         else:
             print 'Enter a valid option.'
+
+
 # calling choose option
 choose_option()
