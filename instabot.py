@@ -12,7 +12,7 @@ import numpy as  np
 import matplotlib.pyplot as plt
 Base_url = 'https://api.instagram.com/v1/'
 
-
+freind =[]
 # method to get our own info.
 def self_info():
     # url for getting our info
@@ -184,7 +184,7 @@ def media_id():
 # Creating function to get  likes on post
 def like_on_post():
     # getting media id from media_id() function
-    media_id1 = media_id()
+
     # setting up url to get details.
     url_likes = Base_url + 'media/%s/likes/?access_token=%s' % (media_id1, ACCESS_TOKEN)
     print url_likes
@@ -281,13 +281,14 @@ def del_comment():
         if len(cmnt['data']) != 0:
 
             for x in range(0, len(cmnt['data'])):
-                blob =TextBlob(cmnt['data'][x]['text'],analyzer=NaiveBayesAnalyzer())
+                blob = TextBlob(cmnt['data'][x]['text'],analyzer=NaiveBayesAnalyzer())
                 blob.sentiment
                 if blob.sentiment.p_pos < blob.sentiment.p_neg:
                     print cmnt['data'][x]['id']
                     data = cmnt['data'][x]['id']
                     url_now = Base_url + 'media/%s/comments/%s?access_token=%s' % (new_media_id, data, ACCESS_TOKEN)
             # Asking user to delete which comment
+
                     comment_del = requests.delete(url_now).json()
                     if comment_del['meta']['code'] == 200:
             # setting up url
@@ -303,57 +304,56 @@ def del_comment():
     elif cmnt['meta']['code'] != 200:
         print 'There was a problem'
 
+def hashtag_analysis():
+    usr_name = raw_input("Enter Username.")
+    user_id = user_info(usr_name)
+    url_hash = Base_url + 'users/%s/media/recent/?access_token=%s' % (user_id, ACCESS_TOKEN)
+    print url_hash
+    media = requests.get(url_hash).json()
+    if media['meta']['code'] == 200:
+        for i in range(0, len(media['data'])):
+            hash_id = media['data'][i]['id']
+            hash_url = Base_url + 'media/%s?access_token=%s' % (hash_id, ACCESS_TOKEN)
+            print hash_url
+            hash_request = requests.get(hash_url).json()
+            if hash_request['meta']['code'] == 200:
+                if hash_request['data']['caption'] !=None:
+                    new_text = hash_request['data']['caption']['text']
+                    print hash_request['data']['caption']['text']
+                    blob = TextBlob(new_text, analyzer=NaiveBayesAnalyzer())
+                    if blob.sentiment.p_pos >= blob.sentiment.p_neg:
+                        number = blob.sentiment.p_pos
+                        freind.append(number)
+                    elif blob.sentiment.p_pos < blob.sentiment.p_neg:
+                        number2 = - blob.sentiment.p_neg
+                        freind.append(number2)
+                else:
+                    print 'No caption.'
+            elif hash_request['meta']['code'] != 200:
+                print 'Invalid Url.'
+    elif media['meta']['code'] != 200:
+        print 'Invalid Url.'
 
-def frnd_hashtag():
-    new_user_hash = media_id()
+    plt.axis([0, len(media['data'])+1, -2, 2])
+    plt.xlabel('Happy')
+    plt.ylabel('Post')
+    post = 1
+    for i in range(0, len(freind)):
+        plt.plot(post, freind[i], 'ro', lw=2)
+        post = post + 1
 
-    url_hash = Base_url + 'media/%s?access_token=%s' % (new_user_hash, ACCESS_TOKEN)
-    hash_req = requests.get(url_hash).json()
-    if hash_req['meta']['code'] == 200:
-        new_text =hash_req['data']['caption']['text']
-        print hash_req['data']['caption']['text']
-        i = 0
-        count = 0
-        while i < len(new_text):
-            if new_text[i] == '#':
-                count = count + 1
-            i = i + 1
+    plt.show()
 
-        hash = new_text.split('#', count)
-        for x in range(1, len(hash)):
-            blob = TextBlob(hash[x], analyzer=NaiveBayesAnalyzer())
-            blob.sentiment
-
-            plt.axis([0, len(hash), -1, 1])
-            plt.xlabel("Interest")
-            plt.xlabel("Post")
-            post = 1
-            if blob.sentiment.p_neg <= blob.sentiment.p_pos:
-                point_y = blob.sentiment.p_pos
-                line, =plt.plot(post, point_y, '-')
-                post = post + 1
-            else:
-                point_y =blob.sentiment.p_neg
-                line, = plt.plot(post, -point_y, '-')
-                post = post + 1
-
-        line.set_antialiased(False)
-        plt.setp(line, color='r', linewidth=2.0)
-        plt.show()
-        print 'SuccessFul.'
-
-    elif hash_req != 200:
-        print 'Unsuccessful.'
 
 
 # creating a method to choose option
+
 def choose_option():
     choose = True
     print 'Welcome to InstaBot.'
     # choosing the option from the list operations
     while choose:
-        option = int(raw_input(
-            "Choose from \n1.Self Info. \n2.Self Post. \n3.UserPost. \n4.List of People like the Post.\n5.Like a Post.\n6.Get Comments.\n7.Post a comment\n8.Delete a comment \n9.HashTag.\n10.Exit\n"))
+        option = int(raw_input("Choose from \n1.Self Info. \n2.Self Post. \n3.UserPost. \n4.List of People like the Post.\n5.Like a Post.\n6.Get Comments.\n7.Post a comment\n8.Delete a comment \n9.Freind Interest\n10.Exit\n"))
         if option == 1:
             self_info()
         elif option == 2:
@@ -371,9 +371,9 @@ def choose_option():
         elif option == 8:
             del_comment()
         elif option == 9:
-            frnd_hashtag()
-        elif option == 10:
 
+            hashtag_analysis()
+        elif option == 10:
             print 'Thank You. Have a great day.'
             choose = False
         else:
