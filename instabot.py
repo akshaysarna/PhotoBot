@@ -12,7 +12,7 @@ import numpy as  np
 import matplotlib.pyplot as plt
 Base_url = 'https://api.instagram.com/v1/'
 
-freind =[]
+friend =[]
 # method to get our own info.
 def self_info():
     # url for getting our info
@@ -331,19 +331,19 @@ def hashtag_analysis():
                     print hash_request['data']['caption']['text']
                     # checking the caption is positive or negative
                     blob = TextBlob(new_text, analyzer=NaiveBayesAnalyzer())
-                    # if positive then we append it freind list
+                    # if positive then we append it friend list
                     if blob.sentiment.p_pos >= blob.sentiment.p_neg:
                         number = blob.sentiment.p_pos
-                        freind.append(number)
+                        friend.append(number)
                     # else append with a negative sign
                     elif blob.sentiment.p_pos < blob.sentiment.p_neg:
                         number2 = - blob.sentiment.p_neg
-                        freind.append(number2)
+                        friend.append(number2)
                 #if no caption on post
                 else:
                     print 'No caption.'
                     number = 0
-                    freind.append(number)
+                    friend.append(number)
             elif hash_request['meta']['code'] != 200:
                 print 'Invalid Url.'
     elif media['meta']['code'] != 200:
@@ -355,9 +355,9 @@ def hashtag_analysis():
     plt.ylabel('Post')
     post = 1
     # ploting the graph
-    for i in range(0, len(freind)):
-        if freind[i] != 0:
-            plt.plot(post, freind[i], 'ro', lw=2)
+    for i in range(0, len(friend)):
+        if friend[i] != 0:
+            plt.plot(post, friend[i], 'ro', lw=2)
         post = post + 1
     # making graph visible
     plt.show()
@@ -371,7 +371,7 @@ def choose_option():
     print 'Welcome to InstaBot.'
     # choosing the option from the list operations
     while choose:
-        option = int(raw_input("Choose from \n1.Self Info. \n2.Self Post. \n3.UserPost. \n4.List of People like the Post.\n5.Like a Post.\n6.Get Comments.\n7.Post a comment\n8.Delete a comment \n9.Freind Interest\n10.Exit\n"))
+        option = int(raw_input("Choose from \n1.Self Info. \n2.Self Post. \n3.UserPost. \n4.List of People like the Post.\n5.Like a Post.\n6.Get Comments.\n7.Post a comment\n8.Delete a comment \n9.friend Interest\n10.Exit\n"))
         if option == 1:
             self_info()
         elif option == 2:
