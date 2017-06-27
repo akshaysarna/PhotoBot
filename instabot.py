@@ -303,45 +303,63 @@ def del_comment():
     # if getting comment didn't work
     elif cmnt['meta']['code'] != 200:
         print 'There was a problem'
-
+# to get user interest through post hashtag
 def hashtag_analysis():
+    # get user details
     usr_name = raw_input("Enter Username.")
     user_id = user_info(usr_name)
+    # get user id
     url_hash = Base_url + 'users/%s/media/recent/?access_token=%s' % (user_id, ACCESS_TOKEN)
     print url_hash
     media = requests.get(url_hash).json()
+    # if connection successful
     if media['meta']['code'] == 200:
+        # get all post caption
         for i in range(0, len(media['data'])):
             hash_id = media['data'][i]['id']
+            # get media hashtags
             hash_url = Base_url + 'media/%s?access_token=%s' % (hash_id, ACCESS_TOKEN)
             print hash_url
+            # get request for hash_url
             hash_request = requests.get(hash_url).json()
+            # if connection successful
             if hash_request['meta']['code'] == 200:
+                # checking whether there is a caption or not
                 if hash_request['data']['caption'] !=None:
+
                     new_text = hash_request['data']['caption']['text']
                     print hash_request['data']['caption']['text']
+                    # checking the caption is positive or negative
                     blob = TextBlob(new_text, analyzer=NaiveBayesAnalyzer())
+                    # if positive then we append it freind list
                     if blob.sentiment.p_pos >= blob.sentiment.p_neg:
                         number = blob.sentiment.p_pos
                         freind.append(number)
+                    # else append with a negative sign
                     elif blob.sentiment.p_pos < blob.sentiment.p_neg:
                         number2 = - blob.sentiment.p_neg
                         freind.append(number2)
+                #if no caption on post
                 else:
                     print 'No caption.'
+                    number = 0
+                    freind.append(number)
             elif hash_request['meta']['code'] != 200:
                 print 'Invalid Url.'
     elif media['meta']['code'] != 200:
         print 'Invalid Url.'
-
+    # defining axis for graph
     plt.axis([0, len(media['data'])+1, -2, 2])
+    # labeling the graph
     plt.xlabel('Happy')
     plt.ylabel('Post')
     post = 1
+    # ploting the graph
     for i in range(0, len(freind)):
-        plt.plot(post, freind[i], 'ro', lw=2)
+        if freind[i] != 0:
+            plt.plot(post, freind[i], 'ro', lw=2)
         post = post + 1
-
+    # making graph visible
     plt.show()
 
 
